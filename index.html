@@ -1,1 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthAI — AI 증상 분석 & 물리치료 가이드</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Sans:wght@400;500;600;700&display=swap');
 
+:root {
+  --teal:       #0d9e7a;
+  --teal-light: #e6f7f2;
+  --teal-mid:   #5dcaa5;
+  --dark:       #0f1f1a;
+  --body-bg:    #f5faf8;
+  --card-bg:    #ffffff;
+  --text-pri:   #0f1f1a;
+  --text-sec:   #4a6b60;
+  --text-muted: #8aaa9e;
+  --border:     #d4ece3;
+  --radius:     16px;
+  --radius-sm:  10px;
+  --shadow:     0 2px 12px rgba(13,158,122,0.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--body-bg);
+  color: var(--text-pri);
+  min-height: 100vh;
+}
+
+/* ── NAV ── */
+nav {
+  background: var(--dark);
+  padding: 0 1.5rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--teal-mid);
+  letter-spacing: -0.5px;
+}
+.nav-logo span { color: #fff; }
+.nav-right { display: flex; align-items: center; gap: 10px; }
+#auth-status { font-size: 12px; color: #4a6b60; }
+.nav-btn {
+  font-size: 13px; font-weight: 500;
+  padding: 7px 15px; border-radius: 8px;
+  border: none; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: opacity .15s;
+}
+.nav-btn:hover { opacity: .85; }
+#login-btn  { background: var(--teal); color: #fff; }
+#logout-btn { background: #1f3028; color: #8aaa9e; display: none; }
+
+/* ── HERO ── */
+.hero {
+  background: var(--dark);
+  padding: 3.5rem 1.5rem 2.5rem;
+  text-align: center;
+}
+.hero-eyebrow {
+  font-size: 11px; font-weight: 500;
+  letter-spacing: .14em; color: var(--teal-mid);
+  text-transform: uppercase; margin-bottom: .9rem;
+}
+.hero h1 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(26px,5vw,46px);
+  font-weight: 700; color: #fff;
+  line-height: 1.15; margin-bottom: .9rem;
+}
+.hero h1 em { color: var(--teal-mid); font-style: normal; }
+.hero p { font-size: 14px; color: #8aaa9e; max-width: 460px; margin: 0 auto; line-height: 1.75; }
+.hero-disc { font-size: 11px; color: #2e5045; margin-top: .75rem; }
+
+/* ── CONTAINER ── */
+.container { max-width: 820px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+
+/* ── CARD ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.6rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 11px; font-weight: 500;
+  color: var(--teal); text-transform: uppercase;
+  letter-spacing: .1em; margin-bottom: 1rem;
+}
+
+/* ── CHIPS ── */
+.chip-group { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 1rem; }
+.chip {
+  font-size: 13px; padding: 6px 13px;
+  border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-sec);
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  transition: all .15s;
+}
+.chip:hover { background: var(--teal-light); border-color: var(--teal-mid); color: var(--teal); }
+.chip.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+/* ── FORM ── */
+.field-label { font-size: 13px; color: var(--text-sec); margin-bottom: 6px; display: block; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+@media(max-width:540px){ .grid-2 { grid-template-columns: 1fr; } }
+
+select, textarea {
+  width: 100%; padding: 10px 13px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'Noto Sans KR', sans-serif; font-size: 14px;
+  color: var(--text-pri); background: var(--body-bg);
+  outline: none; transition: border-color .15s;
+}
+select:focus, textarea:focus { border-color: var(--teal-mid); }
+textarea { resize: none; line-height: 1.6; }
+
+.analyze-btn {
+  width: 100%; padding: 13px;
+  background: var(--teal); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 500;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  margin-top: .9rem;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity .15s, transform .1s;
+}
+.analyze-btn:hover { opacity: .9; }
+.analyze-btn:active { transform: scale(.99); }
+.analyze-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── LOADING ── */
+.loading {
+  display: none; flex-direction: column;
+  align-items: center; gap: 12px; padding: 2rem; text-align: center;
+}
+.spinner {
+  width: 34px; height: 34px;
+  border: 3px solid var(--border); border-top-color: var(--teal);
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { font-size: 14px; color: var(--text-muted); }
+
+/* ── RESULT ── */
+#result-section { display: none; }
+.result-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 10px; margin-bottom: 1.4rem; flex-wrap: wrap;
+}
+.result-tag {
+  display: inline-block;
+  background: var(--teal-light); color: var(--teal);
+  font-size: 11px; font-weight: 500;
+  padding: 3px 11px; border-radius: 20px; margin-bottom: 6px;
+}
+#diagnosis-title { font-size: 21px; font-weight: 600; line-height: 1.3; }
+
+.tts-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 15px;
+  background: var(--dark); color: #fff;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  transition: opacity .15s; white-space: nowrap; flex-shrink: 0;
+}
+.tts-btn:hover { opacity: .85; }
+.tts-btn.speaking { background: var(--teal); }
+
+.section-block {
+  border-left: 3px solid var(--teal-light);
+  padding-left: 1rem; margin-bottom: 1.4rem;
+}
+.section-block h3 { font-size: 14px; font-weight: 500; color: var(--teal); margin-bottom: .5rem; }
+.section-block p, .section-block li { font-size: 14px; color: var(--text-sec); line-height: 1.85; }
+.section-block ul { padding-left: 1.2rem; }
+.section-block li { margin-bottom: 3px; }
+.result-disclaimer { font-size: 12px; color: var(--text-muted); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+/* ── HISTORY ── */
+#history-section { display: none; }
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+.history-item {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--body-bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 13px; color: var(--text-sec);
+  cursor: pointer; transition: border-color .15s;
+}
+.history-item:hover { border-color: var(--teal-mid); color: var(--teal); }
+.history-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.empty-history { text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 14px; }
+
+/* ── LOGIN OVERLAY ── */
+#login-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.55); z-index: 200;
+  align-items: center; justify-content: center;
+}
+#login-overlay.show { display: flex; }
+.login-modal {
+  background: var(--card-bg); border-radius: var(--radius);
+  padding: 2.5rem 2rem; width: 330px; text-align: center;
+}
+.login-modal h2 { font-size: 20px; font-weight: 600; margin-bottom: .5rem; }
+.login-modal p { font-size: 14px; color: var(--text-sec); margin-bottom: 1.5rem; line-height: 1.65; }
+.google-btn {
+  width: 100%; padding: 12px;
+  background: var(--dark); color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif; margin-bottom: 10px;
+  transition: opacity .15s;
+}
+.google-btn:hover { opacity: .85; }
+.close-modal { font-size: 13px; color: var(--text-muted); background: none; border: none; cursor: pointer; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--dark); color: #fff;
+  padding: 10px 20px; border-radius: 8px;
+  font-size: 13px; opacity: 0; transition: all .3s;
+  z-index: 999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><span>Health</span>AI</div>
+  <div class="nav-right">
+    <span id="auth-status">로그인하면 기록이 저장돼요</span>
+    <button class="nav-btn" id="login-btn"  onclick="showLoginModal()">로그인</button>
+    <button class="nav-btn" id="logout-btn" onclick="doLogout()">로그아웃</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-eyebrow">AI 증상 분석 &amp; 물리치료 가이드</p>
+  <h1>증상을 말하면<br><em>AI가 분석해드려요</em></h1>
+  <p>통증 부위와 증상을 선택하면 예상 병명, 원인,<br>치료법, 재활 운동, 예방법까지 안내해드립니다.</p>
+  <p class="hero-disc">⚠ 이 서비스는 교육 목적이며 의료 진단을 대체하지 않습니다.</p>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- 증상 입력 -->
+  <div class="card">
+    <p class="card-title">증상 입력</p>
+
+    <label class="field-label">통증 부위 (여러 개 선택 가능)</label>
+    <div class="chip-group" id="body-chips">
+      <button class="chip" data-val="목">목</button>
+      <button class="chip" data-val="어깨">어깨</button>
+      <button class="chip" data-val="허리">허리</button>
+      <button class="chip" data-val="무릎">무릎</button>
+      <button class="chip" data-val="발목">발목</button>
+      <button class="chip" data-val="손목">손목</button>
+      <button class="chip" data-val="고관절">고관절</button>
+      <button class="chip" data-val="팔꿈치">팔꿈치</button>
+      <button class="chip" data-val="발바닥">발바닥</button>
+      <button class="chip" data-val="등(흉추)">등 (흉추)</button>
+    </div>
+
+    <label class="field-label">증상 유형 (여러 개 선택 가능)</label>
+    <div class="chip-group" id="symptom-chips">
+      <button class="chip" data-val="욱신거리는 통증">욱신거리는 통증</button>
+      <button class="chip" data-val="뻐근함">뻐근함</button>
+      <button class="chip" data-val="저림/무감각">저림 / 무감각</button>
+      <button class="chip" data-val="붓기">붓기</button>
+      <button class="chip" data-val="움직임 제한">움직임 제한</button>
+      <button class="chip" data-val="찌릿한 통증">찌릿한 통증</button>
+      <button class="chip" data-val="근육 경직">근육 경직</button>
+      <button class="chip" data-val="관절에서 소리남">관절에서 소리남</button>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label class="field-label">통증 지속 기간</label>
+        <select id="duration">
+          <option value="">선택하세요</option>
+          <option>하루 이내</option>
+          <option>2~7일</option>
+          <option>1~4주</option>
+          <option>1~3개월</option>
+          <option>3개월 이상 (만성)</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">통증 강도 (1~10)</label>
+        <select id="pain-level">
+          <option value="">선택하세요</option>
+          <option>1~3 (가벼운 불편함)</option>
+          <option>4~6 (일상생활 불편)</option>
+          <option>7~9 (심한 통증)</option>
+          <option>10 (극심한 통증)</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="field-label">추가로 하고 싶은 말 (선택)</label>
+    <textarea id="extra-input" rows="3"
+      placeholder="예) 오래 앉아있으면 더 심해져요 / 운동 중에 다쳤어요 / 아침에 일어날 때 특히 아파요"></textarea>
+
+    <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      AI로 증상 분석하기
+    </button>
+  </div>
+
+  <!-- 로딩 -->
+  <div class="card loading" id="loading-card">
+    <div class="spinner"></div>
+    <p>AI가 증상을 분석하고 있어요...</p>
+  </div>
+
+  <!-- 결과 -->
+  <div id="result-section">
+    <div class="card">
+      <div class="result-header">
+        <div>
+          <span class="result-tag">분석 완료</span>
+          <p id="diagnosis-title"></p>
+        </div>
+        <button class="tts-btn" id="tts-btn" onclick="toggleTTS()">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+          </svg>
+          <span id="tts-label">TTS로 듣기</span>
+        </button>
+      </div>
+      <div id="result-body"></div>
+    </div>
+  </div>
+
+  <!-- 기록 -->
+  <div id="history-section">
+    <div class="card">
+      <p class="card-title">나의 분석 기록</p>
+      <div class="history-list" id="history-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 로그인 모달 -->
+<div id="login-overlay">
+  <div class="login-modal">
+    <h2>로그인</h2>
+    <p>로그인하면 분석 기록이<br>저장되고 언제든 다시 볼 수 있어요.</p>
+    <button class="google-btn" onclick="doGoogleLogin()">🔐 Google 계정으로 로그인</button>
+    <button class="close-modal" onclick="hideLoginModal()">닫기</button>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     🔧 설정값 — 여기만 본인 값으로 바꾸면 돼요!
+════════════════════════════════════════════════════════ -->
+<script>
+  // 1️⃣ Firebase 설정 (Firebase Console → 프로젝트 설정 → 내 앱)
+  const firebaseConfig = {
+  apiKey: "AIzaSyDcKuJ89OCvdI299TDiTQY8UFTT_NSFKtA",
+  authDomain: "test-ac614.firebaseapp.com",
+  databaseURL: "https://test-ac614-default-rtdb.firebaseio.com",
+  projectId: "test-ac614",
+  storageBucket: "test-ac614.firebasestorage.app",
+  messagingSenderId: "99551043693",
+  appId: "1:99551043693:web:07b985bcc9882b543c9f64",
+  measurementId: "G-QHRWGESQ3N"
+};
+
+  // 2️⃣ Google Apps Script 배포 URL
+  //    Apps Script → 배포 → 새 배포 → 웹 앱으로 배포 후 URL 붙여넣기
+  const GAS_URL = "https://script.google.com/a/macros/daehyun.hs.kr/s/AKfycbytKPysdT4XEHIJhXrNY1SH9--v1XiJ82bC2nlLfxUs-gsZWgRmL3pCRtXVB1_ZLqZEwA/exec";
+</script>
+
+<!-- Firebase SDK (모듈) -->
+<script type="module">
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider,
+         signInWithPopup, signOut,
+         onAuthStateChanged }                     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, addDoc,
+         query, where, orderBy,
+         getDocs, serverTimestamp }               from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Firebase 초기화 ─────────────────────────────────────
+const app      = initializeApp(FIREBASE_CONFIG);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const provider = new GoogleAuthProvider();
+let   currentUser = null;
+
+// ── 인증 상태 감지 ──────────────────────────────────────
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  const statusEl      = document.getElementById('auth-status');
+  const loginBtn      = document.getElementById('login-btn');
+  const logoutBtn     = document.getElementById('logout-btn');
+  const historySection = document.getElementById('history-section');
+
+  if (user) {
+    statusEl.textContent   = user.displayName || user.email;
+    loginBtn.style.display  = 'none';
+    logoutBtn.style.display = 'block';
+    historySection.style.display = 'block';
+    loadHistory();
+  } else {
+    statusEl.textContent   = '로그인하면 기록이 저장돼요';
+    loginBtn.style.display  = 'block';
+    logoutBtn.style.display = 'none';
+    historySection.style.display = 'none';
+  }
+});
+
+// ── Google 로그인 ───────────────────────────────────────
+window.doGoogleLogin = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+    hideLoginModal();
+    showToast('로그인 성공! 👋');
+  } catch (e) { showToast('로그인 실패: ' + e.message); }
+};
+
+// ── 로그아웃 ────────────────────────────────────────────
+window.doLogout = async () => {
+  await signOut(auth);
+  showToast('로그아웃됐어요.');
+};
+
+// ── Firestore 저장 ──────────────────────────────────────
+async function saveRecord(symptomSummary, resultText) {
+  if (!currentUser) return;
+  try {
+    await addDoc(collection(db, 'records'), {
+      uid: currentUser.uid,
+      symptomSummary,
+      resultText,
+      createdAt: serverTimestamp()
+    });
+    loadHistory();
+  } catch (e) { console.error('저장 오류:', e); }
+}
+
+// ── 기록 불러오기 ───────────────────────────────────────
+async function loadHistory() {
+  if (!currentUser) return;
+  try {
+    const q    = query(
+      collection(db, 'records'),
+      where('uid', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const snap = await getDocs(q);
+    const list = document.getElementById('history-list');
+
+    if (snap.empty) {
+      list.innerHTML = '<p class="empty-history">아직 분석 기록이 없어요.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    snap.forEach(doc => {
+      const d    = doc.data();
+      const date = d.createdAt?.toDate?.()?.toLocaleDateString('ko-KR') || '방금';
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.innerHTML = `<span>${d.symptomSummary}</span>
+                        <span class="history-date">${date}</span>`;
+      item.onclick = () => displayResult(d.resultText, d.symptomSummary);
+      list.appendChild(item);
+    });
+  } catch (e) { console.error('기록 불러오기 오류:', e); }
+}
+
+// ── 증상 분석 (GAS 프록시 호출) ────────────────────────
+window.analyze = async () => {
+  const bodyParts = [...document.querySelectorAll('#body-chips .chip.active')]
+                      .map(c => c.dataset.val).join(', ');
+  const symptoms  = [...document.querySelectorAll('#symptom-chips .chip.active')]
+                      .map(c => c.dataset.val).join(', ');
+  const duration  = document.getElementById('duration').value;
+  const painLevel = document.getElementById('pain-level').value;
+  const extra     = document.getElementById('extra-input').value.trim();
+
+  if (!bodyParts && !symptoms) {
+    showToast('통증 부위 또는 증상을 하나 이상 선택해주세요.');
+    return;
+  }
+
+  const symptomSummary = [bodyParts, symptoms, duration, painLevel]
+    .filter(Boolean).join(' / ');
+
+  // 로딩 시작
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('loading-card').style.display   = 'flex';
+  document.getElementById('analyze-btn').disabled         = true;
+
+  try {
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'analyze',
+        bodyParts, symptoms, duration, painLevel, extra
+      })
+    });
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    displayResult(data.result, symptomSummary);
+    await saveRecord(symptomSummary, data.result);
+
+  } catch (e) {
+    showToast('오류: ' + e.message);
+  } finally {
+    document.getElementById('loading-card').style.display = 'none';
+    document.getElementById('analyze-btn').disabled       = false;
+  }
+};
+
+// ── 결과 렌더링 ─────────────────────────────────────────
+window.displayResult = (text, symptomSummary) => {
+  const SECTIONS = {
+    '진단명':       { icon: '🩺', color: '#0d9e7a' },
+    '원인':         { icon: '🔍', color: '#1a7fd4' },
+    '치료 방법':    { icon: '💊', color: '#d48a1a' },
+    '재활 운동':    { icon: '🏃', color: '#8b5cf6' },
+    '예방법':       { icon: '🛡️', color: '#16a34a' },
+    '병원 방문 권고':{ icon: '🏥', color: '#dc2626' }
+  };
+
+  // 진단명 헤더 추출
+  const diagMatch = text.match(/\[진단명\]\n?([\s\S]*?)(?=\[|$)/);
+  const diagTitle = diagMatch ? diagMatch[1].trim().split('\n')[0] : '분석 결과';
+  document.getElementById('diagnosis-title').textContent = diagTitle;
+
+  let html = '';
+  for (const [key, meta] of Object.entries(SECTIONS)) {
+    const regex = new RegExp(`\\[${key}\\]\\n?([\\s\\S]*?)(?=\\[|$)`);
+    const match = text.match(regex);
+    if (!match) continue;
+
+    const lines  = match[1].trim().split('\n').filter(l => l.trim());
+    const isList = lines.some(l => /^[-•*\d]/.test(l.trim()));
+
+    html += `<div class="section-block" style="border-left-color:${meta.color}40">
+      <h3 style="color:${meta.color}">${meta.icon} ${key}</h3>`;
+    if (isList) {
+      html += '<ul>' + lines.map(l =>
+        `<li>${l.replace(/^[-•*\d.]\s*/, '')}</li>`).join('') + '</ul>';
+    } else {
+      html += lines.map(l => `<p>${l}</p>`).join('');
+    }
+    html += '</div>';
+  }
+
+  if (text.includes('교육 목적')) {
+    html += `<p class="result-disclaimer">⚠ 이 분석은 교육 목적이며 정확한 진단은 전문의와 상담하세요.</p>`;
+  }
+
+  document.getElementById('result-body').innerHTML = html;
+  document.getElementById('result-section').style.display = 'block';
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+
+  window._ttsText = text;
+};
+
+// ── TTS ─────────────────────────────────────────────────
+let speaking = false;
+window.toggleTTS = () => {
+  if (!window._ttsText) return;
+  const btn   = document.getElementById('tts-btn');
+  const label = document.getElementById('tts-label');
+
+  if (speaking) {
+    speechSynthesis.cancel();
+    speaking = false;
+    btn.classList.remove('speaking');
+    label.textContent = 'TTS로 듣기';
+    return;
+  }
+
+  const utt   = new SpeechSynthesisUtterance(window._ttsText);
+  utt.lang    = 'ko-KR';
+  utt.rate    = 0.95;
+  utt.onend   = () => {
+    speaking = false;
+    btn.classList.remove('speaking');
+    label.textContent = 'TTS로 듣기';
+  };
+  speechSynthesis.speak(utt);
+  speaking = true;
+  btn.classList.add('speaking');
+  label.textContent = '■ 정지';
+};
+
+// ── UI 헬퍼 ─────────────────────────────────────────────
+window.showLoginModal  = () => document.getElementById('login-overlay').classList.add('show');
+window.hideLoginModal  = () => document.getElementById('login-overlay').classList.remove('show');
+
+window.showToast = (msg) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+};
+
+// 칩 토글
+document.querySelectorAll('.chip').forEach(chip =>
+  chip.addEventListener('click', () => chip.classList.toggle('active'))
+);
+</script>
+</body>
+</html>
